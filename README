@@ -1,2 +1,18 @@
 TErHa - Templateable Error Handler
 Require PHP > 5.2
+
+Original ide from Tyrael (https://github.com/Tyrael/php-error-handler)
+ 
+Error handler which can provide you an easy way to handle errors even non
+recoverable errors like E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR.
+ 
+It wraps the error to an ErrorException instance and throws the
+exception (for catchable errors) or calls the default exception handler (for
+fatal errors.
+
+BEWARE: you cannot continue the execution of your script on such errors, but
+with this script, you can gracefully terminate.
+ 
+@author Vince Tikász 4image#dev|WSE#dev
+
+For SQLite loging You need PDO_SQLITE
