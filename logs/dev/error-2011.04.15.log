@@ -1,0 +1,46 @@
+2011-04-15T17:58:47+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=warning - Warning:copy(./notexisting.file) [<a href='function.copy'>function.copy</a>]: failed to open stream: No such file or directory in /media/work/www/terha/demo/e00002_warning.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T17:59:10+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:02:43+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Notice:Undefined property: ErrorHandler::$baseUrl in /media/work/www/terha/profiles/dev/layout.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:02:43+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:03:22+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Notice:Undefined property: ErrorHandler::$baseUrl in /media/work/www/terha/profiles/dev/layout.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:03:22+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:00+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Notice:Undefined property: ErrorHandler::$baseUrl in /media/work/www/terha/profiles/dev/layout.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:00+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:20+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Notice:Undefined property: stdClass::$baseUrl in /media/work/www/terha/profiles/dev/layout.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:20+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:36+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:48+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_error - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00016_core_error.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:51+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=exception - Demo exception in /media/work/www/terha/demo/e_exception.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:10:59+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=user_deprecated - User deprecated:Triggered user deprecated in /media/work/www/terha/demo/e16384_user_deprecated.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:05+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=deprecated - Deprecated:Function eregi_replace() is deprecated in /media/work/www/terha/demo/e08192_deprecated.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:06+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=recoverable_error - Warning:include(e04096_strict.php) [<a href='function.include'>function.include</a>]: failed to open stream: No such file or directory in /media/work/www/terha/demo/index.php:[64]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:06+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=recoverable_error - Warning:include() [<a href='function.include'>function.include</a>]: Failed opening 'e04096_strict.php' for inclusion (include_path='.:/usr/share/php:/usr/share/pear') in /media/work/www/terha/demo/index.php:[64]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:07+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=strict - Fatal error:Cannot re-assign $this in /media/work/www/terha/demo/e02048_strict.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:21+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=user_notice - Fatal error:Cannot re-assign $this in /media/work/www/terha/demo/e01024_user_notice.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:24+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=user_warning - User warning:Triggered user warning in /media/work/www/terha/demo/e00512_user_warning.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:25+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=user_error - Fatal user error:Triggered user error in /media/work/www/terha/demo/e00256_user_error.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:27+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=compile - Fatal error:Cannot re-assign $this in /media/work/www/terha/demo/e00128_compile_warning.php:[2]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16
+2011-04-15T18:11:29+02:00 @ HTTP/1.1 GET homer:80/terha/demo/?demo=core_warning - Fatal error:Trying to clone an uncloneable object of class ReflectionClass in /media/work/www/terha/demo/e00032_core_warning.php:[3]
+	127.0.0.1 => Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Ubuntu/10.10 Chromium/10.0.648.204 Chrome/10.0.648.204 Safari/534.16

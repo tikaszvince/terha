@@ -1,0 +1,120 @@
+/**
+ * @project Error handler
+ * @author Tikász Vince
+ */
+@import url(../error.css);
+
+
+body {
+	background:#252525;
+	color: #CECECE;
+	text-align:center;
+}
+
+#container {
+	width: 980px;
+	margin:0 auto;
+	text-align:left;
+}
+
+#container header {
+	margin: 10px 0 0;
+	padding:20px;
+	background:#000;
+	-moz-border-radius-topleft: 10px;
+	-moz-border-radius-topright: 10px;
+	-moz-border-radius-bottomright: px;
+	-moz-border-radius-bottomleft: 0px;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+	border-bottom-right-radius: px;
+	border-bottom-left-radius: 0px;
+}
+
+#container h1 {
+	font-size: 32px;
+	line-height: 120px;
+	padding: 0 0 0 170px;
+	background:#000 url(sr.logo.png) no-repeat 0 0;
+}
+
+#main {
+	margin: 0 0 10px;
+	padding: 20px;
+	background:#000;
+	-moz-border-radius-topleft: 0px;
+	-moz-border-radius-topright: 0px;
+	-moz-border-radius-bottomright: 10px;
+	-moz-border-radius-bottomleft: 10px;
+	border-top-left-radius: 0px;
+	border-top-right-radius: 0px;
+	border-bottom-right-radius: 10px;
+	border-bottom-left-radius: 10px;
+}
+
+#main h3 {margin:0 0 1em;}
+#main h3 .type {}
+#main h3 .msg { display: block;}
+
+#main .xdebug-error {
+	width:100%;
+	color: #000;
+}
+#main .xdebug-error,
+#main .xdebug-error tr,
+#main .xdebug-error td,
+#main .xdebug-error th {
+	border: 1px solid #000;
+	padding: .5em;
+}
+
+#main pre,
+#main .code{
+	background: #fff;
+	color:#000;
+	padding:10px;
+	margin:10px 0;
+	font-size: 11px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	border: 2px solid #cecece;
+	overflow:auto;
+}
+
+#main .code ol {
+	padding: 10px;
+}
+#main .code ol,
+#main .code ol li {line-height:12px;}
+#main .code ol li.l {white-space: pre; color:#777;border:1px solid #fff;padding:2px 0;}
+#main .code ol li.actline {white-space: pre; color: #000; border-color:#600;}
+
+#main .trace {
+	background: #cecece;
+	color:#000;
+	border-collapse: collapse;
+	width:100%;
+}
+#main .trace,
+#main .trace tr,
+#main .trace tr td,
+#main .trace tr th {
+	border:1px solid #333;
+	padding: 2px;
+}
+
+#main .trace .switch,
+#main .trace .closer {
+	cursor:pointer;
+	float:right;
+	width:1em;
+	height:1em;
+	margin:0 5px 0 0;
+	text-align:center;
+}
+.xdebug-var-dump {
+	text-align:left;
+}
+
+
+/* end */
