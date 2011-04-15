@@ -34,8 +34,8 @@ body {
 #container h1 {
 	font-size: 32px;
 	line-height: 120px;
-	padding: 0 0 0 170px;
-	background:#000 url(sr.logo.png) no-repeat 0 0;
+	padding: 0;
+	background:#000;
 }
 
 #main {

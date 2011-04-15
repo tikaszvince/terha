@@ -39,11 +39,11 @@ $baseUrl = $this->usedProfile->base_url;
 <body class="dev">
   <div id="container">
     <header>
-		<h1>Hiba történt!</h1>
+		<h1>An Error Occured!</h1>
     </header>
     <div id="main" role="main">
 <?php if ( $this->profile == 'prod' ) : ?>
-	<div>Nagyon rossz dolog történt</div>
+	<div>Application error!</div>
 <?php else : ?>
 <!-- Display Error-->
 <h3>

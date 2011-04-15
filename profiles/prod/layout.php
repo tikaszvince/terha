@@ -39,10 +39,10 @@ $baseUrl = $this->usedProfile->base_url;
 <body class="prod">
   <div id="container">
     <header>
-		<h1>Hiba történt!</h1>
+		<h1>An error occured!</h1>
     </header>
     <div id="main" role="main">
-		<div>Nagyon rossz dolog történt</div>
+		<div>Application error</div>
 	</div>
     <footer>
 		
