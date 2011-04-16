@@ -303,7 +303,7 @@ final class ErrorHandler {
 							$this->usedProfile->mail['lastMailSent'] = 0;
 						}
 						$this->usedProfile->mail['sendOnDestruct'] = 
-							$this->usedProfile->mail['lastMailSent']
+							!$this->usedProfile->mail['lastMailSent']
 							|| ( time() >= $this->usedProfile->mail['lastMailSent'] 
 												+ $this->usedProfile->mail['sendIntervalSeconds'] );
 					}
@@ -573,9 +573,9 @@ final class ErrorHandler {
 		$hashFile = dirname(__FILE__).'/logs/_mail/'.$errorHash;
 		$msg = array();
 		if ( !is_file( $hashFile ) ) {
-			$msg[] = $e->error_type_name.': ';
-			$msg[] = $e->getMessage().' in ';
-			$msg[] = $e->getFile().':[';
+			$msg[] = $e->error_type_name.' ';
+			$msg[] = $e->getMessage()." in\n";
+			$msg[] = $e->getFile().' on line [';
 			$msg[] = $e->getLine().']';
 			$msg[] = "\nTrace:\n------\n";
 			$msg[] = $e->getTraceAsString();
@@ -871,12 +871,13 @@ final class ErrorHandler {
 		if ( !empty( $msg ) ) {
 			$sendSuccess = mail(
 				$this->usedProfile->mail['to'],
-				$this->usedProfile->mail['subject'].date('Y-m-d H:i:s'),
-				'=?UTF-8?B?'.base64_encode('Theese errors triggered: '.join('',$msg)).'?=',
+				'=?UTF-8?B?'.base64_encode($this->usedProfile->mail['subject'].date('Y-m-d H:i:s')).'?=',
+				"Theese errors triggered:\n\n".join('',$msg),
 				join("\r\n",array(
 					// additional headers
 					'MIME-Version: 1.0',
 					'Content-type: text/plain; charset=UTF-8',
+					'Content-Transfer-Encoding: 8bit',
 					'X-Priority: 1 (Higuest)',
 					'X-MSMail-Priority: High',
 					'Importance: High',
