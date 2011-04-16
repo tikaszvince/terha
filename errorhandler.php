@@ -124,10 +124,49 @@ final class ErrorHandler {
 	);
 
 	/**
+	 * Is this is an AJAX request?
+	 * @see sendJSON()
+	 * @var Bool
+	 */
+	protected $isAjaxRequest = false;
+
+	/**
+	 * Get singelton instance
+	 * @return ErrorHandler
+	 */
+	static public function getInst() {
+		if ( !isset(self::$instance ) ) {
+			$c = __CLASS__;
+			self::$instance = new $c;
+		}
+		return self::$instance;
+	}
+
+	/**
+	 * Check if any error triggered
+	 * @return Bool
+	 */
+	public function _hasError() {
+		return !empty( $this->_errors );
+	}
+	
+	/**
+	 * Has error?
+	 * @return Bool
+	 */
+	static public function hasError() {
+		return self::getInst()->_hasError();
+	}
+
+// setup
+
+	/**
 	 * A private constructor; prevents direct creation of object
 	 */
 	private function __construct() {
 		$this->usedProfile = (object)$this->usedProfile;
+		// If ENVIRONMENT is declared, and we have profile with that name
+		// reead and use that profile
 		if (
 			defined('ENVIRONMENT')
 			&& is_readable( $ini = dirname(__FILE__).'/profiles/'.strtolower(ENVIRONMENT).'/settings.ini' )
@@ -135,22 +174,39 @@ final class ErrorHandler {
 			$this->loadProfile(ENVIRONMENT);
 		}
 
+		// If in root directory You have errorhandler.ini
+		// we will try to parse and load settings from that
 		$iniPath = dirname($_SERVER['SCRIPT_FILENAME']).'/errorhandler.ini';
 		if ( is_readable($iniPath) ) {
 			$this->parseConigFile($iniPath);
 		}
 
+		// setup internal property
+		// On error display this is TRUE we send JSON answer for client
+		$this->isAjaxRequest =
+			isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+			&& 'XMLHttpRequest' == $_SERVER['HTTP_X_REQUESTED_WITH']
+		;
+
+		// Setup logger properties
 		$logger = explode('@',$this->usedProfile->log_errors);
+		// Logging method
 		$this->usedProfile->_logger = array_shift($logger);
+		// logfilename
 		$this->usedProfile->_logfile = join('@',$logger);
 
+		// Switch off PHP error displaing method
 		ini_set('display_errors', 0);
+		// setup shutdown
 		register_shutdown_function(array($this, 'shutdown'));
 		$this->oldErrHandler = set_error_handler(array($this,'errorHandling'));
 		if ( $this->oldErrHandler ) {
+			// if you already setup any error handler
 			restore_error_handler();
+			// we are sorry, but "There can be only one!"
 			throw new Exception('error handler already defined');
 		}
+		// We must catch all exception too
 		set_exception_handler(array($this,'exceptionHandler'));
 	}
 
@@ -235,6 +291,21 @@ final class ErrorHandler {
 						foreach( $value as $mailSetting => $mailValue ) {
 							$this->usedProfile->mail[$mailSetting] = $mailValue;
 						}
+						$this->usedProfile->mail['sendIntervalSeconds'] =
+								$this->usedProfile->mail['period'] * 60;
+						$lastMailFile = dirname(__FILE__).'/logs/_mail/lastmailsent';
+						if ( is_readable( $lastMailFile ) ) {
+							$this->usedProfile->mail['lastMailSent'] = 
+								intval(file_get_contents($lastMailFile));
+						}
+						else {
+							file_put_contents($lastMailFile, 0);
+							$this->usedProfile->mail['lastMailSent'] = 0;
+						}
+						$this->usedProfile->mail['sendOnDestruct'] = 
+							$this->usedProfile->mail['lastMailSent']
+							|| ( time() >= $this->usedProfile->mail['lastMailSent'] 
+												+ $this->usedProfile->mail['sendIntervalSeconds'] );
 					}
 					else {
 						$this->usedProfile->mail = false;
@@ -244,6 +315,28 @@ final class ErrorHandler {
 		}
 		return $this;
 	}
+
+	/**
+	 * Enable error display
+	 * @return ErrorHandler 
+	 */
+	public function enableDisplayError() {
+		$this->usedProfile->display_error = true;
+		return $this;
+	}
+
+	/**
+	 * Hide ALL error
+	 * @param Bool $force
+	 * @return ErrorHandler 
+	 */
+	public function disableDisplayError($force = false) {
+		$this->usedProfile->display_error = false;
+		$this->usedProfile->force_disable_display = $force;
+		return $this;
+	}
+
+// handling
 
 	/**
 	 * Destructor
@@ -272,55 +365,13 @@ final class ErrorHandler {
 					join("\n", $this->_errors),"\n-->\n";				
 			}
 		}
-		restore_error_handler();
-	}
-
-	/**
-	 * Get singelton instance
-	 * @return ErrorHandler
-	 */
-	static public function getInst() {
-		if ( !isset(self::$instance ) ) {
-			$c = __CLASS__;
-			self::$instance = new $c;
+		if (
+			$this->usedProfile->mail
+			&& $this->usedProfile->mail['sendOnDestruct']
+		){
+			$this->sendMail();
 		}
-		return self::$instance;
-	}
-
-	/**
-	 * Check if any error triggered
-	 * @return Bool
-	 */
-	public function _hasError() {
-		return !empty( $this->_errors );
-	}
-	
-	/**
-	 * Has error?
-	 * @return Bool
-	 */
-	static public function hasError() {
-		return self::getInst()->_hasError();
-	}
-
-	/**
-	 * Enable error display
-	 * @return ErrorHandler 
-	 */
-	public function enableDisplayError() {
-		$this->usedProfile->display_error = true;
-		return $this;
-	}
-
-	/**
-	 * Hide ALL error
-	 * @param Bool $force
-	 * @return ErrorHandler 
-	 */
-	public function disableDisplayError($force = false) {
-		$this->usedProfile->display_error = false;
-		$this->usedProfile->force_disable_display = $force;
-		return $this;
+		restore_error_handler();
 	}
 
 	/**
@@ -331,12 +382,19 @@ final class ErrorHandler {
 		try {
 			$error = error_get_last();
 			if ( $error ) {
-				$e = new ErrorException($error['message'], -26, $error['type'], $error['file'], $error['line']); 
+				$e = new ErrorException(
+					$error['message'],
+					-26,
+					$error['type'],
+					$error['file'],
+					$error['line']
+				);
 				$this->exceptionHandler($e);
 			}
 		}
 		catch(Exception $e) {
-			error_log("unexpected exception in register_shutdown_function:\n".print_r($e, true), 4);
+			error_log("unexpected exception in register_shutdown_function:\n".
+						print_r($e, true), 4);
 		}
 	}
 
@@ -394,22 +452,13 @@ final class ErrorHandler {
 		$e->error_type_name = $typeLabel;
 		if ( $die || !($e instanceof ErrorException) ) {
 			$this->errorPageDisplayed = true;
-			if (
-				isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-				&& 'XMLHttpRequest' == $_SERVER['HTTP_X_REQUESTED_WITH']
-			) {
-				header('Content-type: application/json; charset=utf8');
-				header('Access-Control-Max-Age: 3628800');
-				echo json_encode(array('exception' => array(
-					'code' => $e->getCode(),
-					'file' => $e->getFile(),
-					'line' => $e->getLine(),
-					'message' => $e->getMessage(),
-					'trace' => $e->getTrace()
-					)));
-				exit;
-			}
+			// For debug You can throw an exception with code -16
+			// to display any data, without display any error page
 			if ( -16 == $e->getCode() ) {
+				if ( $this->isAjaxRequest ) {
+					$this->sendJSON($e);
+					exit;
+				}
 				include dirname(__FILE__).'/profiles/_debug/layout.php';
 				exit;
 			}
@@ -424,17 +473,46 @@ final class ErrorHandler {
 			include $templates.$pageTemplate;
 			$displayed = true;
 		}
-		
+
 		// do error handling
+		if ( $this->isAjaxRequest ) {
+			$this->sendJSON($e);
+			$displayed = true;
+		}
 		if ( $this->usedProfile->display_error && !$displayed ) {
 			$this->display($e, $die);
 		}
 		if ( $this->usedProfile->log_errors ) {
-			$this->log($e, $die);
+			$this->log($e);
 		}
 		if ( $this->usedProfile->mail ) {
-			$this->mail($e, $die);
+			$this->mail($e);
 		}
+	}
+
+// backend
+
+	/**
+	 * Send JSON answer to client
+	 * @param Exception $e 
+	 * @return void
+	 */
+	protected function sendJSON(Exception $e) {
+		header('HTTP/1.1 500 Internal Server Error');
+		header('Content-type: application/json; charset=utf8');
+		header('Access-Control-Max-Age: 3628800');
+		echo json_encode(array(
+			'error' => true,
+			'code' => 500,
+			'status' => 'error',
+			'exception' => array(
+				'code' => $e->getCode(),
+				'file' => $e->getFile(),
+				'line' => $e->getLine(),
+				'message' => $e->getMessage(),
+				'trace' => $e->getTrace()
+			)
+		));
 	}
 
 	/**
@@ -467,10 +545,9 @@ final class ErrorHandler {
 	/**
 	 * Log error
 	 * @param Exception $e
-	 * @param Bool $die
 	 * @return void
 	 */
-	protected function log(Exception $e, $die = false) {
+	protected function log(Exception $e) {
 		if ( !$this->usedProfile->log_errors ) {
 			return;
 		}
@@ -489,11 +566,30 @@ final class ErrorHandler {
 	/**
 	 * Mail errors
 	 * @param Exception $e
-	 * @param Bool $die
 	 * @return void
-	 * @todo WRITE MAIL SENDING
 	 */
-	protected function mail(Exception $e, $die = false) {
+	protected function mail(Exception $e) {
+		$errorHash = md5( $e->getMessage().$e->getFile().$e->getLine() );
+		$hashFile = dirname(__FILE__).'/logs/_mail/'.$errorHash;
+		$msg = array();
+		if ( !is_file( $hashFile ) ) {
+			$msg[] = $e->error_type_name.': ';
+			$msg[] = $e->getMessage().' in ';
+			$msg[] = $e->getFile().':[';
+			$msg[] = $e->getLine().']';
+			$msg[] = "\nTrace:\n------\n";
+			$msg[] = $e->getTraceAsString();
+			$msg[] = "\n==============================\n";
+			$msg[] = "This error triggered on\n- - - - - - - - - - - - - - -\n";
+		}
+		$_SERVERPORT = isset($_SERVER['SERVER_PORT']) ? $_SERVER['SERVER_PORT'] : 80;
+		$msg = array_merge( $msg, array(
+			date('c'),' @ ',
+			$_SERVER['SERVER_PROTOCOL'],' ',$_SERVER['REQUEST_METHOD'],"\n",
+			$_SERVER['HTTP_HOST'],':',$_SERVERPORT,$_SERVER['REQUEST_URI'], "\n",
+			$_SERVER['REMOTE_ADDR'],' => ',$_SERVER['HTTP_USER_AGENT'],"\n---\n"
+		));
+		file_put_contents($hashFile, join('',$msg), FILE_APPEND | LOCK_EX);
 	}
 
 //helpers
@@ -563,6 +659,8 @@ final class ErrorHandler {
 		return $this->usedProfile->logfilename;
 	}
 
+// Helpers: file log
+
 	/**
 	 * Write error into TXT log
 	 * @param Exception $e
@@ -584,6 +682,8 @@ final class ErrorHandler {
 		}
 		file_put_contents($fileName, implode('',$msg), FILE_APPEND | LOCK_EX );
 	}
+
+// Helpers: SQLite
 
 	/**
 	 * Get SQLite PDO object
@@ -643,7 +743,8 @@ final class ErrorHandler {
 		$sth->execute(array(':hash' => $error['hash'] ));
 		$error['id'] = $sth->fetchColumn();
 		if ( !$error['id'] ) {
-			$sth = $this->getSqliteDb()->prepare('INSERT INTO errors (hash, msg,file,line) VALUES (:hash, :msg, :file, :line)');
+			$sth = $this->getSqliteDb()
+				->prepare('INSERT INTO errors (hash, msg,file,line) VALUES (:hash, :msg, :file, :line)');
 			$sth->bindValue(':hash', $error['hash'], PDO::PARAM_STR);
 			$sth->bindValue(':msg', $error['msg'], PDO::PARAM_STR);
 			$sth->bindValue(':file', $error['file'], PDO::PARAM_STR);
@@ -673,6 +774,8 @@ final class ErrorHandler {
 		$sth->execute();
 	}
 
+// Helpers: display
+
 	/**
 	 * Display an error with trace
 	 * @param Exception $e
@@ -680,7 +783,8 @@ final class ErrorHandler {
 	 */
 	protected function displayHtml(Exception $e) {
 		echo "\n<!-- Display Error-->\n<br/>",
-			'<table class="xdebug-error" dir="ltr" cellspacing="0" cellpadding="1" border="1" style="text-align:left !important;">';
+			'<table class="xdebug-error" dir="ltr" cellspacing="0" cellpadding="1" ',
+				'border="1" style="text-align:left !important;">';
 		if ( isset($e->xdebug_message) ) {
 			echo $e->xdebug_message;
 		}
@@ -742,6 +846,56 @@ final class ErrorHandler {
 			$e->getMessage(),' in ',
 			$e->getFile(),':[',$e->getLine(),']',"\n\t"
 		;
+	}
+
+// Helpers: mail
+
+	/**
+	 * Do mail sending
+	 * @return void
+	 */
+	protected function sendMail() {
+		$messages = glob( dirname(__FILE__).'/logs/_mail/*' );
+		$msg = array();
+		foreach( $messages as $file ) {
+			$fileName = basename($file);
+			if (
+				'.' == substr($fileName, 0, 1)
+				|| 'lastmailsent' == $fileName
+			) {
+				continue;
+			}
+			$msg[] = file_get_contents($file);
+			$msg[] = "\n====================================\n";
+		}
+		if ( !empty( $msg ) ) {
+			$sendSuccess = mail(
+				$this->usedProfile->mail['to'],
+				$this->usedProfile->mail['subject'].date('Y-m-d H:i:s'),
+				'=?UTF-8?B?'.base64_encode('Theese errors triggered: '.join('',$msg)).'?=',
+				join("\r\n",array(
+					// additional headers
+					'MIME-Version: 1.0',
+					'Content-type: text/plain; charset=UTF-8',
+					'X-Priority: 1 (Higuest)',
+					'X-MSMail-Priority: High',
+					'Importance: High',
+					'From: '.$this->usedProfile->mail['from'],
+					'Reply-To: '.$this->usedProfile->mail['from'],
+					'Return-Path: '.$this->usedProfile->mail['from'],
+					'X-Mailer: PHP/'.  phpversion().' - TErHa Error Handler'
+				)),
+				join("\r\n",array(
+					// additional parameters
+				))
+			);
+			if ( $sendSuccess ) {
+				foreach( $messages as $file ) {
+					unlink($file);
+				}
+				file_put_contents(dirname(__FILE__).'/logs/_mail/lastmailsent', time());
+			}
+		}
 	}
 }
 
