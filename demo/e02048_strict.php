@@ -1,2 +1,2 @@
 <?php
-$this = 'asd';
+$person->name = 'Rasmus Lerdorf';

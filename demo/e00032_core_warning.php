@@ -1,4 +1,4 @@
 <?php
-$foo = new ReflectionClass('StdClass');
-clone $foo;
+
+throw new ErrorException('CORE E_CORE_WARNING', E_CORE_WARNING);
 

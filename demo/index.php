@@ -1,27 +1,31 @@
 <?php
-xdebug_disable();
+if ( function_exists('xdebug_disable') ) {
+	xdebug_disable();
+}
 ini_set('display_errors', 'On');
-error_reporting(E_ALL) ;
+error_reporting(E_ALL | E_STRICT) ;
 define('ENVIRONMENT','DEV');
 include '../errorhandler.php';
 
-
 ?>
+<div style="text-align:left;background:#fff;">
 <a href="?demo=error">Error</a> | 
 <a href="?demo=warning">Warning</a> | 
-<a href="?demo=parse">Parse</a> | 
-<a href="?demo=core_error">Core Error</a> |
-<a href="?demo=core_warning">Core Warning</a> | 
-<a href="?demo=compile">Compile</a> |
-<a href="?demo=compile_warning">Compile</a> |
+<a href="?demo=parse">Parse</a> <br/>
+<a href="?demo=core_error">Core error</a> |
+<a href="?demo=core_warning">Core warning</a> | 
+<a href="?demo=compile">Compile error</a> |
+<a href="?demo=compile_warning">Compile warning</a> <br/>
 <a href="?demo=user_error">User error</a> |
 <a href="?demo=user_warning">User warning</a> |
-<a href="?demo=user_notice">User notice</a> |
-<a href="?demo=strict">strict</a> |
+<a href="?demo=user_notice">User notice</a> <br/>
+<a href="?demo=strict">Strict</a> |
 <a href="?demo=recoverable_error">Recoverable error</a> |
 <a href="?demo=deprecated">Deprecated</a> |
-<a href="?demo=user_deprecated">User Deprecated</a> |
-<a href="?demo=exception">Exception</a>
+<a href="?demo=user_deprecated">User Deprecated</a> <br/>
+<a href="?demo=exception">Exception</a> |
+<a href="?demo=return">Return</a>
+</div>
 <?php
 
 switch ( isset($_GET['demo']) ? $_GET['demo'] : false ) {
@@ -62,7 +66,7 @@ switch ( isset($_GET['demo']) ? $_GET['demo'] : false ) {
 		include 'e02048_strict.php';
 		break;
 	case 'recoverable_error':
-		include 'e04096_strict.php';
+		include 'e04096_revoverable_error.php';
 		break;
 	case 'deprecated':
 		include 'e08192_deprecated.php';
@@ -73,9 +77,11 @@ switch ( isset($_GET['demo']) ? $_GET['demo'] : false ) {
 	case 'exception':
 		include 'e_exception.php';
 		break;
+	case 'return':
+		include 'e_return.php';
+		break;
 	default:
 		break;
 }
 
-
-
+//end

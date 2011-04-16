@@ -1,7 +1,7 @@
-TErHa - Templateable Error Handler
+TErHa - Templatable PHP  Error Handler class
 Require PHP > 5.2
 
-Original ide from Tyrael (https://github.com/Tyrael/php-error-handler)
+Original idea from Tyrael (https://github.com/Tyrael/php-error-handler)
  
 Error handler which can provide you an easy way to handle errors even non
 recoverable errors like E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR.
