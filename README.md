@@ -75,14 +75,14 @@ predefined profile and make your own.
 ### ENVIRONMENT
 Value should be the name of an available profile.
 
-### display_error [Bool]
+### display_error (Bool)
 If value is `true` every error will be displayed. You can customize display mode with
 `show_trace`, `group_display`, `display_mode`, `group_mode` settings.
 
 ### error_reporting [Bool] (Not in use)
 Sets which PHP errors are reported
 
-### log_errors [String]
+### log_errors (String)
 Error handler should log triggered errors? If false no logs wil be writen.
 Error handler can write log into plain text files or SQLite database.
 
@@ -98,23 +98,23 @@ You can use tokens to set dinamic parts to the path.
 - `{Ym}` will replaced with value of `date('Y.m')`
 - `{Yw}` or `{YW}` will replaced with value of `date('Y.w')`
 
-### `show_trace` [Bool]
+### `show_trace` (Bool)
 If `true` trace to triggered error will be shown.
 
-### `group_display` [Bool]
+### `group_display` (Bool)
 If true ErrorHandler will collect triggered errors and display them on the end of
 generated page. You can customize displaying mode with `show_trace`,
 `display_mode`, `group_mode` settings.
 
 If `display_error` is false errors not will be displayed.
 
-### `display_mode` `[DM_BLANK|DM_HTML]`
+### `display_mode` `(DM_BLANK|DM_HTML)`
 If value is `DM_BLANK` errors will be displayd as plain text messages.
 if value is `DM_HTML HTML` formated error messages will be displayed.
 
 If `display_error` is false errors not will be displayed.
 
-### `group_mode` `[GDM_COMMENT|GDM_DIV]`
+### `group_mode` `(GDM_COMMENT|GDM_DIV)`
 If you use group_display you can customize the displaing mode of grouped errors.
 If you set `GDM_COMMENT` collected errors will covered in a HTML comment on the end
 of generated page.
