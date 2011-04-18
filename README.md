@@ -72,17 +72,17 @@ predefined profile and make your own.
 
 ## Configuration
 
-### ENVIRONMENT
+### `ENVIRONMENT`
 Value should be the name of an available profile.
 
-### display_error (Bool)
+### `display_error` (Bool)
 If value is `true` every error will be displayed. You can customize display mode with
 `show_trace`, `group_display`, `display_mode`, `group_mode` settings.
 
 ### error_reporting [Bool] (Not in use)
 Sets which PHP errors are reported
 
-### log_errors (String)
+### `log_errors` (String)
 Error handler should log triggered errors? If false no logs wil be writen.
 Error handler can write log into plain text files or SQLite database.
 
@@ -97,6 +97,7 @@ You can use tokens to set dinamic parts to the path.
 - `{m}` will replaced with value of `date('m')`
 - `{Ym}` will replaced with value of `date('Y.m')`
 - `{Yw}` or `{YW}` will replaced with value of `date('Y.w')`
+
 
 ### `show_trace` (Bool)
 If `true` trace to triggered error will be shown.
