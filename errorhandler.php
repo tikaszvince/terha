@@ -27,7 +27,7 @@ if ( !defined('E_USER_DEPRECATED') ) {
  * @uses PHP >= 5.2
  * @uses PDO_SQLITE
  */
-final class ErrorHandler {
+class ErrorHandler {
 
 	// Profile constants
 	const DEV = 'dev';
@@ -143,6 +143,18 @@ final class ErrorHandler {
 	}
 
 	/**
+	 * Prive clone method; prevents object clone
+	 */
+	private function __clone() {
+	}
+
+	/**
+	 * Prive wakeup method; prevents object deserialization
+	 */
+	private function __wakeup() {
+	}
+
+	/**
 	 * Check if any error triggered
 	 * @return Bool
 	 */
@@ -197,8 +209,6 @@ final class ErrorHandler {
 
 		// Switch off PHP error displaing method
 		ini_set('display_errors', 0);
-		// setup shutdown
-		register_shutdown_function(array($this, 'shutdown'));
 		$this->oldErrHandler = set_error_handler(array($this,'errorHandling'));
 		if ( $this->oldErrHandler ) {
 			// if you already setup any error handler
@@ -206,6 +216,8 @@ final class ErrorHandler {
 			// we are sorry, but "There can be only one!"
 			throw new Exception('error handler already defined');
 		}
+		// setup shutdown
+		register_shutdown_function(array($this, 'shutdown'));
 		// We must catch all exception too
 		set_exception_handler(array($this,'exceptionHandler'));
 	}
@@ -372,6 +384,7 @@ final class ErrorHandler {
 			$this->sendMail();
 		}
 		restore_error_handler();
+		restore_exception_handler();
 	}
 
 	/**
@@ -808,7 +821,7 @@ final class ErrorHandler {
 					'<tr><th align="center" bgcolor="#eeeeec">#</th><th align="left" bgcolor="#eeeeec">Function</th>',
 						'<th align="left" bgcolor="#eeeeec">Location</th></tr>',"\n",
 					'<tr><td bgcolor="#eeeeec" align="center">1</td><td bgcolor="#eeeeec">{main}(  )</td>',
-						'<td title="',$_SERVER['PHP_SELF'],'" bgcolor="#eeeeec">',basename($_SERVER['PHP_SELF']),
+						'<td title="',$_SERVER['SCRIPT_FILENAME'],'" bgcolor="#eeeeec">',basename($_SERVER['SCRIPT_FILENAME']),
 							"<b>:</b>0</td></tr>\n"
 				;
 				$trace = array_reverse($e->getTrace());
