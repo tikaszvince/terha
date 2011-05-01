@@ -1,17 +1,90 @@
 <?php
+/**
+ * Error mailer
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
 
+/**
+ * Requirements
+ */
 require_once dirname(__FILE__).'/abstract.php';
+
+/**
+ * Error mailer
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
 
 class ErrorHandler_Handler_Mail
 	extends ErrorHandler_Handler_Abstract {
+
+	/**
+	 * Path to message stack directory
+	 * @var String
+	 */
+	protected $msgStack;
+
+	/**
+	 * Path to lastMailSent file
+	 * @var String
+	 */
+	protected $lastMailFile;
 	
+	/**
+	 * Init handler
+	 * @return type 
+	 */
 	protected function init() {
-		return (bool)$this->usedProfile->mail;
+		if (
+			(bool)$this->usedProfile->mail
+			&& is_array($this->usedProfile->mail)
+		) {
+			$this->msgStack = dirname(dirname(__FILE__)).'/logs/_mail';
+			$this->lastMailFile = $this->msgStack.'/lastmailsent';
+
+			foreach( $this->usedProfile->mail as $mailSetting => $mailValue ) {
+				$this->usedProfile->mail[$mailSetting] = $mailValue;
+			}
+
+			if ( is_readable( $this->lastMailFile ) ) {
+				$this->usedProfile->mail['lastMailSent'] = 
+					intval(file_get_contents($this->lastMailFile));
+			}
+			else {
+				file_put_contents($this->lastMailFile, 0);
+				$this->usedProfile->mail['lastMailSent'] = 0;
+			}
+
+			$this->usedProfile->mail['sendIntervalSeconds'] =
+				intval($this->usedProfile->mail['period']) * 60;
+
+			
+			$this->usedProfile->mail['sendOnDestruct'] = 
+				!$this->usedProfile->mail['lastMailSent']
+				|| 0 >= $this->usedProfile->mail['sendIntervalSeconds']
+				|| ( time() >= $this->usedProfile->mail['lastMailSent'] 
+						+ $this->usedProfile->mail['sendIntervalSeconds'] );
+
+			return true;
+		}
+		$this->usedProfile->mail = false;
+		return false;
 	}
 
-	public function onException(Exception $e) {
+	/**
+	 * Error handler
+	 * @param Exception $e 
+	 */
+	protected function onError(Exception $e) {
+		$this->onException($e);
+	}
+
+	/**
+	 * Exception handler
+	 * @param Exception $e 
+	 */
+	protected function onException(Exception $e) {
 		$errorHash = md5( $e->getMessage().$e->getFile().$e->getLine() );
-		$hashFile = dirname(__FILE__).'/logs/_mail/'.$errorHash;
+		$hashFile = $this->msgStack.'/'.$errorHash;
 		$msg = array();
 		if ( !is_file( $hashFile ) ) {
 			$msg[] = $e->error_type_name.' ';
@@ -33,7 +106,11 @@ class ErrorHandler_Handler_Mail
 		file_put_contents($hashFile, join('',$msg), FILE_APPEND | LOCK_EX);
 	}
 
-	public function onDestruct() {
+	/**
+	 * Destruction handler
+	 * @return void
+	 */
+	protected function onDestruct() {
 		if (
 			$this->usedProfile->mail
 			&& $this->usedProfile->mail['sendOnDestruct']
@@ -46,8 +123,8 @@ class ErrorHandler_Handler_Mail
 	 * Do mail sending
 	 * @return void
 	 */
-	protected function sendMail() {
-		$messages = glob( dirname(__FILE__).'/logs/_mail/*' );
+	private function sendMail() {
+		$messages = glob( $this->msgStack.'/*' );
 		$msg = array();
 		foreach( $messages as $file ) {
 			$fileName = basename($file);
@@ -86,7 +163,7 @@ class ErrorHandler_Handler_Mail
 				foreach( $messages as $file ) {
 					unlink($file);
 				}
-				file_put_contents(dirname(__FILE__).'/logs/_mail/lastmailsent', time());
+				file_put_contents($this->lastMailFile, time());
 			}
 		}
 	}

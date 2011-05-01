@@ -20,7 +20,32 @@ abstract class ErrorHandler_Handler_Abstract {
 	 * @var stdClass
 	 */
 	protected $usedProfile;
-	
+
+	/**
+	 * If triggered error is one of theese error types script will terminating
+	 * @var Array
+	 */
+	public $dieOn;
+
+	/**
+	 * Catched errors
+	 * @var Array
+	 */
+	public $errors;
+
+	/**
+	 * Used labels for types
+	 * @var Array
+	 * @todo Move it to a method
+	 */
+	public $errorLabels;
+
+	/**
+	 * Is error page displayed
+	 * @var Bool
+	 */
+	public $errorPageDisplayed;
+
 	/**
 	 * Is this is an AJAX request?
 	 * @see sendJSON()
@@ -53,7 +78,6 @@ abstract class ErrorHandler_Handler_Abstract {
 	 * @return Bool
 	 */
 	final public function _init() {
-		//var_dump( get_class($this).'::'.__FUNCTION__.'()' );
 		return $this->init();
 	}
 
@@ -62,7 +86,6 @@ abstract class ErrorHandler_Handler_Abstract {
 	 * @return void
 	 */
 	final public function _destruct() {
-		//var_dump( get_class($this).'::'.__FUNCTION__.'()' );
 		$this->onDestruct();
 	}
 
@@ -71,7 +94,6 @@ abstract class ErrorHandler_Handler_Abstract {
 	 * @return void
 	 */
 	final public function _shutdown(Exception $e) {
-		//var_dump( get_class($this).'::'.__FUNCTION__.'()' );
 		$this->onShutdown($e);
 	}
 
@@ -80,7 +102,6 @@ abstract class ErrorHandler_Handler_Abstract {
 	 * @param Exception $e 
 	 */
 	final public function _errorHandling(Exception $e) {
-		//var_dump( get_class($this).'::'.__FUNCTION__.'()' );
 		$this->onError($e);
 	}
 
@@ -89,7 +110,6 @@ abstract class ErrorHandler_Handler_Abstract {
 	 * @param Exception $e 
 	 */
 	final public function _exceptionHandling(Exception $e) {
-		//var_dump( get_class($this).'::'.__FUNCTION__.'()' );
 		$this->onException($e);
 	}
 

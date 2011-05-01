@@ -134,13 +134,6 @@ class ErrorHandler {
 	);
 
 	/**
-	 * Is this is an AJAX request?
-	 * @see sendJSON()
-	 * @var Bool
-	 */
-	protected $isAjaxRequest = false;
-
-	/**
 	 * Get singelton instance
 	 * @return ErrorHandler
 	 */
@@ -202,13 +195,6 @@ class ErrorHandler {
 		if ( is_readable($iniPath) ) {
 			$this->parseConigFile($iniPath);
 		}
-
-		// setup internal property
-		// On error display this is TRUE we send JSON answer for client
-		$this->isAjaxRequest =
-			isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-			&& 'XMLHttpRequest' == $_SERVER['HTTP_X_REQUESTED_WITH']
-		;
 
 		// Switch off PHP error displaing method
 		ini_set('display_errors', 0);
@@ -287,7 +273,8 @@ class ErrorHandler {
 	/**
 	 * Set profile settings from array
 	 * @param Array $settings
-	 * @return ErrorHandler 
+	 * @return ErrorHandler
+	 * @todo Move this setting parsing things into relevant handler init
 	 */
 	protected function setProfile(array $settings) {
 		foreach( $settings as $setting => $value ) {
@@ -326,31 +313,6 @@ class ErrorHandler {
 					}
 					break;
 
-				case 'mail':
-					if ( is_array($value) ) {
-						foreach( $value as $mailSetting => $mailValue ) {
-							$this->usedProfile->mail[$mailSetting] = $mailValue;
-						}
-						$this->usedProfile->mail['sendIntervalSeconds'] =
-								$this->usedProfile->mail['period'] * 60;
-						$lastMailFile = dirname(__FILE__).'/logs/_mail/lastmailsent';
-						if ( is_readable( $lastMailFile ) ) {
-							$this->usedProfile->mail['lastMailSent'] = 
-								intval(file_get_contents($lastMailFile));
-						}
-						else {
-							file_put_contents($lastMailFile, 0);
-							$this->usedProfile->mail['lastMailSent'] = 0;
-						}
-						$this->usedProfile->mail['sendOnDestruct'] = 
-							!$this->usedProfile->mail['lastMailSent']
-							|| ( time() >= $this->usedProfile->mail['lastMailSent'] 
-												+ $this->usedProfile->mail['sendIntervalSeconds'] );
-					}
-					else {
-						$this->usedProfile->mail = false;
-					}
-					break;
 			}
 		}
 		return $this;
@@ -407,12 +369,6 @@ class ErrorHandler {
 	 * @return void
 	 */
 	public function __destruct() {
-		if (
-			$this->usedProfile->mail
-			&& $this->usedProfile->mail['sendOnDestruct']
-		){
-			$this->sendMail();
-		}
 		$this->trigger(ErrorHandler_Handler_Abstract::EV_DESTRUCT);
 		restore_error_handler();
 		restore_exception_handler();

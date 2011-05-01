@@ -1,15 +1,34 @@
 <?php
+/**
+ * JSON handler
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
 
+/**
+ * Requirements
+ */
 require_once dirname(__FILE__).'/abstract.php';
 
+/**
+ * JSON handler
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
 class ErrorHandler_Handler_Json
 	extends ErrorHandler_Handler_Abstract {
-	
+
+	/**
+	 * Init display handler
+	 * @return Bool
+	 */
 	protected function init() {
 		return $this->isAjaxRequest;
 	}
-	
-	public function onException(Exception $e) {
+
+	/**
+	 * Exception handler
+	 * @return Bool
+	 */	
+	protected function onException(Exception $e) {
 		if ( !$this->isAjaxRequest ) {
 			return false;
 		}

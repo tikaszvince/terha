@@ -1,10 +1,25 @@
 <?php
+/**
+ * Error logger
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
 
+/**
+ * Requirements
+ */
 require_once dirname(__FILE__).'/abstract.php';
 
+/**
+ * Error logger
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
 class ErrorHandler_Handler_Logger
 	extends ErrorHandler_Handler_Abstract {
-	
+
+	/**
+	 * Init handler
+	 * @return Bool
+	 */
 	protected function init() {
 		if( (bool)$this->usedProfile->log_errors ) {
 			// Setup logger properties
@@ -13,11 +28,24 @@ class ErrorHandler_Handler_Logger
 			$this->usedProfile->_logger = array_shift($logger);
 			// logfilename
 			$this->usedProfile->_logfile = join('@',$logger);
-
+			return true;
 		}
 		return false;
 	}
 
+	/**
+	 * Error handler
+	 * @return void
+	 */
+	public function  onError(Exception $e) {
+		$this->onException($e);
+	}
+
+	/**
+	 * Exception|Error handler
+	 * @param Exception $e
+	 * @return void 
+	 */
 	public function onException(Exception $e) {
 		if ( !$this->usedProfile->log_errors ) {
 			return;
@@ -34,20 +62,11 @@ class ErrorHandler_Handler_Logger
 		}
 	}
 
-	public function onDestruct() {
-		if (
-			$this->usedProfile->mail
-			&& $this->usedProfile->mail['sendOnDestruct']
-		){
-			$this->sendMail();
-		}
-	}
-
 	/**
 	 * Get log file name
 	 * @return String
 	 */
-	protected function getLogFileName() {
+	private function getLogFileName() {
 		if ( !isset( $this->usedProfile->logfilename ) ) {
 			$filename = '/logs/error-{w}.log';
 			$filename = preg_replace(
@@ -56,7 +75,7 @@ class ErrorHandler_Handler_Logger
 					'%{[wW]}%', '%{date}%', '%{m}%', '%{Ym}%', '%{Y[wW]}%'
 				),
 				array(
-					dirname(__FILE__),dirname($_SERVER['SCRIPT_FILENAME']),
+					dirname(dirname(__FILE__)),dirname($_SERVER['SCRIPT_FILENAME']),
 					date('W'), date('Y.m.d'), date('m'), date('Y.m'), date('Y.W')
 				),
 				$this->usedProfile->_logfile
@@ -77,14 +96,14 @@ class ErrorHandler_Handler_Logger
 	 * @param Exception $e
 	 * @return void
 	 */
-	protected function logLog(Exception $e) {
+	private function logLog(Exception $e) {
 		$msg = array(
 			date('c'),' @ ',
-			$_SERVER['SERVER_PROTOCOL'],' ',$_SERVER['REQUEST_METHOD'],' ',
-			$_SERVER['HTTP_HOST'],':',$_SERVER['SERVER_PORT'],$_SERVER['REQUEST_URI'], ' - ',
+			$_SERVER['REMOTE_ADDR'],' => ',$_SERVER['SERVER_PROTOCOL'],' ',$_SERVER['REQUEST_METHOD'],' ',
+			$_SERVER['HTTP_HOST'],':',$_SERVER['SERVER_PORT'],$_SERVER['REQUEST_URI'],"\n\t",
 			$e->error_type_name,$e->getMessage(),' in ',
 			$e->getFile(),':[',$e->getLine(),']',"\n\t",
-			$_SERVER['REMOTE_ADDR'],' => ',$_SERVER['HTTP_USER_AGENT'],"\n"
+			$_SERVER['HTTP_USER_AGENT'],"\n\n"
 		);
 		$fileName = $this->getLogFileName();
 		if (!is_file($fileName)) {
@@ -100,7 +119,7 @@ class ErrorHandler_Handler_Logger
 	 * Get SQLite PDO object
 	 * @return PDO
 	 */
-	protected function getSqliteDb() {
+	private function getSqliteDb() {
 		$createTable = !is_file($this->getLogFileName());
 		if ( !isset($this->sqliteLogDb) ) {
 			$this->sqliteLogDb = new PDO('sqlite:'.$this->getLogFileName());
@@ -138,7 +157,7 @@ class ErrorHandler_Handler_Logger
 	 * @param Exception $e
 	 * @return void
 	 */
-	protected function logSqlite(Exception $e) {
+	private function logSqlite(Exception $e) {
 		if ( !extension_loaded('pdo_sqlite') ) {
 			$this->logLog($e);
 			return;

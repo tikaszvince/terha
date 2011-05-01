@@ -1,5 +1,10 @@
 <?php
 /**
+ * Error display handler
+ * @author Vince Tikász 4image#dev|WSE#dev
+ */
+
+/**
  * Requirements
  */
 require_once dirname(__FILE__).'/abstract.php';
@@ -10,18 +15,17 @@ require_once dirname(__FILE__).'/abstract.php';
  */
 class ErrorHandler_Handler_Display
 	extends ErrorHandler_Handler_Abstract {
-	
+
+	/**
+	 * Init display handler
+	 * @return Bool
+	 */
 	protected function init() {
-		if (
-			 $this->usedProfile->display_error
-		) {
-			return true;
-		}
-		return false;
+		return (bool)$this->usedProfile->display_error;
 	}
 
 	/**
-	 * Blank Shutdown handler
+	 * Shutdown handler
 	 * @return void
 	 */
 	protected function onShutdown(Exception $e) {
@@ -29,13 +33,17 @@ class ErrorHandler_Handler_Display
 	}
 
 	/**
-	 * Blank Shutdown handler
+	 * Error handler
 	 * @return void
 	 */
 	protected function onError($e) {
 		$this->display($e);
 	}
 
+	/**
+	 * Exception handler
+	 * @param Exception $e 
+	 */
 	protected function onException(Exception $e) {
 		$typeLabel = 'Error:';
 		$displayed = false;
@@ -80,7 +88,11 @@ class ErrorHandler_Handler_Display
 		}
 
 	}
-	
+
+	/**
+	 * Destruction handler
+	 * @return void
+	 */
 	protected function onDestruct() {
 		if (
 			$this->errorPageDisplayed
@@ -106,15 +118,13 @@ class ErrorHandler_Handler_Display
 		}
 	}
 
-	
-
 	/**
 	 * Display error
 	 * @param Exception $e
 	 * @param Bool $die
 	 * @return void
 	 */
-	protected function display(Exception $e, $die = false) {
+	private function display(Exception $e, $die = false) {
 		ob_start();
 		// Display Mode
 		if (
@@ -137,14 +147,12 @@ class ErrorHandler_Handler_Display
 		}
 	}
 
-// Helpers: display
-
 	/**
 	 * Display an error with trace
 	 * @param Exception $e
 	 * @return void
 	 */
-	protected function displayHtml(Exception $e) {
+	private function displayHtml(Exception $e) {
 		echo "\n<!-- Display Error-->\n<br/>",
 			'<table class="xdebug-error" dir="ltr" cellspacing="0" cellpadding="1" ',
 				'border="1" style="text-align:left !important;">';
@@ -203,7 +211,7 @@ class ErrorHandler_Handler_Display
 	 * @param Exception $e
 	 * @return void
 	 */
-	protected function displayComment(Exception $e) {
+	private function displayComment(Exception $e) {
 		echo 
 			$e->error_type_name,
 			$e->getMessage(),' in ',
