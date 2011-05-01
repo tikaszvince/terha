@@ -79,7 +79,7 @@ Value should be the name of an available profile.
 If value is `true` every error will be displayed. You can customize display mode with
 `show_trace`, `group_display`, `display_mode`, `group_mode` settings.
 
-### error_reporting [Bool] (Not in use)
+### `error_reporting` (Bool) (Not in use)
 Sets which PHP errors are reported
 
 ### `log_errors` (String)

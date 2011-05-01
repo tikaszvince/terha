@@ -7,6 +7,10 @@ if ( !defined('E_DEPRECATED') ) {
 if ( !defined('E_USER_DEPRECATED') ) {
 	define('E_USER_DEPRECATED', 16384 );
 }
+/**
+ * Requirements
+ */
+require_once dirname(__FILE__).'/handler/abstract.php';
 
 /**
  * Error handler
@@ -80,6 +84,12 @@ class ErrorHandler {
 	 * @var Array
 	 */
 	protected $_errors = array();
+
+	/**
+	 * Inited error handlers
+	 * @var Array
+	 */
+	protected $handlers = array();
 
 	/**
 	 * Error page is displayed?
@@ -200,13 +210,6 @@ class ErrorHandler {
 			&& 'XMLHttpRequest' == $_SERVER['HTTP_X_REQUESTED_WITH']
 		;
 
-		// Setup logger properties
-		$logger = explode('@',$this->usedProfile->log_errors);
-		// Logging method
-		$this->usedProfile->_logger = array_shift($logger);
-		// logfilename
-		$this->usedProfile->_logfile = join('@',$logger);
-
 		// Switch off PHP error displaing method
 		ini_set('display_errors', 0);
 		$this->oldErrHandler = set_error_handler(array($this,'errorHandling'));
@@ -220,8 +223,33 @@ class ErrorHandler {
 		register_shutdown_function(array($this, 'shutdown'));
 		// We must catch all exception too
 		set_exception_handler(array($this,'exceptionHandler'));
+		$this->initHandlers();
 	}
 
+	/**
+	 * Init all available handlers
+	 * @return ErrorHandler
+	 */
+	public function initHandlers() {
+		foreach( glob( dirname(__FILE__).'/handler/*.php' ) as $file ) {
+			$name = pathinfo($file,PATHINFO_FILENAME);
+			if ( 'abstract' == $name ) {
+				continue;
+			}
+			include_once $file;
+			$class = 'ErrorHandler_Handler_'.ucfirst($name);
+			$handler = new $class($this->usedProfile);
+			if ( $handler->_init() ) {
+				$handler->dieOn = &$this->dieOn;
+				$handler->errors = &$this->_errors;
+				$handler->errorLabels = &$this->errorLabels;
+				$handler->errorPageDisplayed = &$this->errorPageDisplayed;
+				$this->handlers[ $handler->order ][] = $handler;
+			}
+		}
+		return $this;
+	}
+	
 	/**
 	 * Try to load 
 	 * @param String $profile
@@ -282,10 +310,10 @@ class ErrorHandler {
 
 				case 'display_mode':
 					if ( in_array($value, array( self::DM_BLANK, self::DM_HTML )) ) {
-						$this->usedProfile->group_display = $value;
+						$this->usedProfile->display_mode = $value;
 					}
 					elseif ( in_array($value, array( 'DM_BLANK', 'DM_HTML' )) ) {
-						$this->usedProfile->group_display = constant(__CLASS__.'::'.$value);
+						$this->usedProfile->display_mode = constant(__CLASS__.'::'.$value);
 					}
 					break;
 
@@ -350,39 +378,42 @@ class ErrorHandler {
 
 // handling
 
+	public function trigger($ev, $e = null) {
+		foreach( $this->handlers as $order => $handlers ) {
+			foreach( $handlers as $handler ) {
+				switch( $ev ) {
+					case ErrorHandler_Handler_Abstract::EV_INIT:
+						$habdler->_init();
+						break;
+					case ErrorHandler_Handler_Abstract::EV_DESTRUCT:
+						$handler->_destruct();
+						break;
+					case ErrorHandler_Handler_Abstract::EV_SHUTDOWN:
+						$handler->_shutdown($e);
+						break;
+					case ErrorHandler_Handler_Abstract::EV_ONERROR:
+						$handler->_errorHandling($e);
+						break;
+					case ErrorHandler_Handler_Abstract::EV_ONEXCEPTION:
+						$handler->_exceptionHandling($e);
+						break;
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Destructor
 	 * @return void
 	 */
 	public function __destruct() {
 		if (
-			$this->errorPageDisplayed
-			|| (
-				isset($this->usedProfile->force_disable_display)
-				&& $this->usedProfile->force_disable_display
-			)
-		) {
-			// do not display
-		}
-		elseif(
-			$this->usedProfile->display_error
-			&& count( $this->_errors )
-		){
-			if ( ErrorHandler::GDM_DIV == $this->usedProfile->group_mode ) {
-				echo "<div id=\"php-errors\"><div class=\"c\">Triggered errors:<br/>\n",
-					join("\n", $this->_errors),"\n</div></div>\n";
-			}
-			else {
-				echo "\n<!-- Triggered errors:\n",
-					join("\n", $this->_errors),"\n-->\n";				
-			}
-		}
-		if (
 			$this->usedProfile->mail
 			&& $this->usedProfile->mail['sendOnDestruct']
 		){
 			$this->sendMail();
 		}
+		$this->trigger(ErrorHandler_Handler_Abstract::EV_DESTRUCT);
 		restore_error_handler();
 		restore_exception_handler();
 	}
@@ -402,7 +433,7 @@ class ErrorHandler {
 					$error['file'],
 					$error['line']
 				);
-				$this->exceptionHandler($e);
+				$this->trigger(ErrorHandler_Handler_Abstract::EV_SHUTDOWN,$e);
 			}
 		}
 		catch(Exception $e) {
@@ -436,7 +467,7 @@ class ErrorHandler {
 		$e->eh_throwed = true;
 		if ( !in_array( $errno, $this->dieOn ) ) {
 			$e->eh_throwed = false;
-			$this->exceptionHandler($e);
+			$this->trigger(ErrorHandler_Handler_Abstract::EV_ONERROR,$e);
 		}
 		else {
 			throw $e;
@@ -449,467 +480,7 @@ class ErrorHandler {
 	 * @return void
 	 */
 	public function exceptionHandler(Exception $e) {
-		$typeLabel = 'Error:';
-		$displayed = false;
-		if ( $e instanceof ErrorException ) {
-			$severity = $e->getSeverity();
-			$die = in_array( $severity, $this->dieOn );
-			if ( isset( $this->errorLabels[$severity] ) ) {
-				$typeLabel = $this->errorLabels[$severity].':';
-			}
-		}
-		else {
-			$typeLabel = '';
-			$die = false;
-		}
-		$e->error_type_name = $typeLabel;
-		if ( $die || !($e instanceof ErrorException) ) {
-			$this->errorPageDisplayed = true;
-			// For debug You can throw an exception with code -16
-			// to display any data, without display any error page
-			if ( -16 == $e->getCode() ) {
-				if ( $this->isAjaxRequest ) {
-					$this->sendJSON($e);
-					exit;
-				}
-				include dirname(__FILE__).'/profiles/_debug/layout.php';
-				exit;
-			}
-			$templates = dirname(__FILE__).'/profiles/';
-			$pageTemplate = 'prod/layout.php';
-			if (
-				$this->usedProfile->error_page_template
-				&& is_file( $templates.$this->usedProfile->error_page_template )
-			) {
-				$pageTemplate = $this->usedProfile->error_page_template;
-			}
-			include $templates.$pageTemplate;
-			$displayed = true;
-		}
-
-		// do error handling
-		if ( $this->isAjaxRequest ) {
-			$this->sendJSON($e);
-			$displayed = true;
-		}
-		if ( $this->usedProfile->display_error && !$displayed ) {
-			$this->display($e, $die);
-		}
-		if ( $this->usedProfile->log_errors ) {
-			$this->log($e);
-		}
-		if ( $this->usedProfile->mail ) {
-			$this->mail($e);
-		}
-	}
-
-// backend
-
-	/**
-	 * Send JSON answer to client
-	 * @param Exception $e 
-	 * @return void
-	 */
-	protected function sendJSON(Exception $e) {
-		header('HTTP/1.1 500 Internal Server Error');
-		header('Content-type: application/json; charset=utf8');
-		header('Access-Control-Max-Age: 3628800');
-		echo json_encode(array(
-			'error' => true,
-			'code' => 500,
-			'status' => 'error',
-			'exception' => array(
-				'code' => $e->getCode(),
-				'file' => $e->getFile(),
-				'line' => $e->getLine(),
-				'message' => $e->getMessage(),
-				'trace' => $e->getTrace()
-			)
-		));
-	}
-
-	/**
-	 * Display error
-	 * @param Exception $e
-	 * @param Bool $die
-	 * @return void
-	 */
-	protected function display(Exception $e, $die = false) {
-		ob_start();
-		// Display Mode
-		if ( ErrorHandler::DM_HTML == $this->usedProfile->display_mode ) {
-			$this->displayHtml($e);
-		}
-		else {
-			$this->displayComment($e);
-		}
-		
-		if ( $this->usedProfile->display_error ) {
-			// group display?
-			if ( $this->usedProfile->group_display && !$die ) {
-				$this->_errors[] = ob_get_clean();
-			}
-			else {
-				ob_end_flush();
-			}
-		}
-	}
-
-	/**
-	 * Log error
-	 * @param Exception $e
-	 * @return void
-	 */
-	protected function log(Exception $e) {
-		if ( !$this->usedProfile->log_errors ) {
-			return;
-		}
-		switch($this->usedProfile->_logger) {
-			case 'file':
-				$this->logLog($e);
-				break;
-			case 'sqlite':
-				$this->logSqlite($e);
-				break;
-			default:
-				break;
-		}
-	}
-
-	/**
-	 * Mail errors
-	 * @param Exception $e
-	 * @return void
-	 */
-	protected function mail(Exception $e) {
-		$errorHash = md5( $e->getMessage().$e->getFile().$e->getLine() );
-		$hashFile = dirname(__FILE__).'/logs/_mail/'.$errorHash;
-		$msg = array();
-		if ( !is_file( $hashFile ) ) {
-			$msg[] = $e->error_type_name.' ';
-			$msg[] = $e->getMessage()." in\n";
-			$msg[] = $e->getFile().' on line [';
-			$msg[] = $e->getLine().']';
-			$msg[] = "\nTrace:\n------\n";
-			$msg[] = $e->getTraceAsString();
-			$msg[] = "\n==============================\n";
-			$msg[] = "This error triggered on\n- - - - - - - - - - - - - - -\n";
-		}
-		$_SERVERPORT = isset($_SERVER['SERVER_PORT']) ? $_SERVER['SERVER_PORT'] : 80;
-		$msg = array_merge( $msg, array(
-			date('c'),' @ ',
-			$_SERVER['SERVER_PROTOCOL'],' ',$_SERVER['REQUEST_METHOD'],"\n",
-			$_SERVER['HTTP_HOST'],':',$_SERVERPORT,$_SERVER['REQUEST_URI'], "\n",
-			$_SERVER['REMOTE_ADDR'],' => ',$_SERVER['HTTP_USER_AGENT'],"\n---\n"
-		));
-		file_put_contents($hashFile, join('',$msg), FILE_APPEND | LOCK_EX);
-	}
-
-//helpers
-
-	/**
-	 * Get function string for trace display
-	 * @param Array $tr trace
-	 * @return String
-	 */
-	protected function getFunctionString(array $tr) {
-		$func = array();
-		if ( isset($tr['class']) ) {
-			if( 'ErrorHandler' == $tr['class'] && 'errorHandler' == $tr['function'] ) {
-				return 'ErrorHandler::errorHandler';
-			}
-			$func[] = $tr['class'];
-		}
-		if ( isset($tr['type']) ) {
-			$func[] = $tr['type'];
-		}
-		if ( isset($tr['function']) ) {
-			$func[] = $tr['function'].'(';
-			if ( isset($tr['args']) && $tr['args'] ) {
-				$args = array();
-				foreach( $tr['args'] as $arg ) {
-					if ( is_object($arg) ) {
-						$args[] = 'Object['.get_class($arg).']';
-					}
-					elseif( is_array( $arg ) ) {
-						$args[] = 'Array('.count($arg).')';
-					}
-					else {
-						$args[] = $arg;
-					}
-				}
-				$func[] = join(', ',$args);
-			}
-			$func[] = ')';
-		}
-		return join('',$func);
-	}
-
-	/**
-	 * Get log file name
-	 * @return String
-	 */
-	protected function getLogFileName() {
-		if ( !isset( $this->usedProfile->logfilename ) ) {
-			$filename = '/logs/error-{w}.log';
-			$filename = preg_replace(
-				array(
-					'%{__DIRNAME__}%','%{__APPDIR__}%',
-					'%{[wW]}%', '%{date}%', '%{m}%', '%{Ym}%', '%{Y[wW]}%'
-				),
-				array(
-					dirname(__FILE__),dirname($_SERVER['SCRIPT_FILENAME']),
-					date('W'), date('Y.m.d'), date('m'), date('Y.m'), date('Y.W')
-				),
-				$this->usedProfile->_logfile
-			);
-			if ( !is_dir( dirname($filename) ) ) {
-				mkdir( dirname($filename), 0777, true );
-				chmod( dirname($filename), 0777 );
-			}
-			$this->usedProfile->logfilename = dirname($filename).'/'.basename($filename);
-		}
-		return $this->usedProfile->logfilename;
-	}
-
-// Helpers: file log
-
-	/**
-	 * Write error into TXT log
-	 * @param Exception $e
-	 * @return void
-	 */
-	protected function logLog(Exception $e) {
-		$msg = array(
-			date('c'),' @ ',
-			$_SERVER['SERVER_PROTOCOL'],' ',$_SERVER['REQUEST_METHOD'],' ',
-			$_SERVER['HTTP_HOST'],':',$_SERVER['SERVER_PORT'],$_SERVER['REQUEST_URI'], ' - ',
-			$e->error_type_name,$e->getMessage(),' in ',
-			$e->getFile(),':[',$e->getLine(),']',"\n\t",
-			$_SERVER['REMOTE_ADDR'],' => ',$_SERVER['HTTP_USER_AGENT'],"\n"
-		);
-		$fileName = $this->getLogFileName();
-		if (!is_file($fileName)) {
-			touch($fileName);
-			chmod($fileName,0666);
-		}
-		file_put_contents($fileName, implode('',$msg), FILE_APPEND | LOCK_EX );
-	}
-
-// Helpers: SQLite
-
-	/**
-	 * Get SQLite PDO object
-	 * @return PDO
-	 */
-	protected function getSqliteDb() {
-		$createTable = !is_file($this->getLogFileName());
-		if ( !isset($this->sqliteLogDb) ) {
-			$this->sqliteLogDb = new PDO('sqlite:'.$this->getLogFileName());
-		}
-		if ( !$createTable ) {
-			$createTable = 0 >= count($this->sqliteLogDb->query('PRAGMA table_info(errors)')->fetchAll());
-		}
-		if ( $createTable ) {
-			$this->sqliteLogDb->exec('CREATE TABLE errors (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				hash char(32),
-				msg text,
-				file text,
-				line INTEGER default 0
-			)');
-			$this->sqliteLogDb->exec('CREATE INDEX hashIndex on hash');
-			$this->sqliteLogDb->exec('CREATE TABLE log (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				hash char(32),
-				timestamp timestamp NOT NULL default CURRENT_TIMESTAMP,
-				method cahr(10),
-				hostname varchar(100),
-				port integer,
-				uri text,
-				ip char(14),
-				params text
-			)');
-			
-		}
-		return $this->sqliteLogDb;
-	}
-
-	/**
-	 * Write into SQLite log
-	 * @param Exception $e
-	 * @return void
-	 */
-	protected function logSqlite(Exception $e) {
-		if ( !extension_loaded('pdo_sqlite') ) {
-			$this->logLog($e);
-			return;
-		}
-		$error = array(
-			'id' => null,
-			'hash' => md5( $e->getMessage().$e->getFile().$e->getLine() ),
-			'msg' => $e->getMessage(),
-			'file' => $e->getFile(),
-			'line' => $e->getLine()
-		);
-		$sth = $this->getSqliteDb()->prepare('SELECT id FROM errors WHERE hash = :hash LIMIT 1');
-		$sth->execute(array(':hash' => $error['hash'] ));
-		$error['id'] = $sth->fetchColumn();
-		if ( !$error['id'] ) {
-			$sth = $this->getSqliteDb()
-				->prepare('INSERT INTO errors (hash, msg,file,line) VALUES (:hash, :msg, :file, :line)');
-			$sth->bindValue(':hash', $error['hash'], PDO::PARAM_STR);
-			$sth->bindValue(':msg', $error['msg'], PDO::PARAM_STR);
-			$sth->bindValue(':file', $error['file'], PDO::PARAM_STR);
-			$sth->bindValue(':line', $error['line'], PDO::PARAM_INT);
-			$sth->execute();
-			$error['id'] = $this->getSqliteDb()->lastInsertId();
-		}
-		$sth = $this->getSqliteDb()->prepare('INSERT INTO log (hash,method,hostname,port,uri,ip,params)
-			VALUES (:hash,:method,:hostname,:port,:uri,:ip,:params)');
-		$sth->bindValue(':hash', $error['hash'], PDO::PARAM_STR);
-		$sth->bindValue(':method', $_SERVER['REQUEST_METHOD'], PDO::PARAM_STR);
-		$sth->bindValue(':hostname', $_SERVER['HTTP_HOST'], PDO::PARAM_STR);
-		$sth->bindValue(':port', $_SERVER['SERVER_PORT'], PDO::PARAM_STR);
-		$sth->bindValue(':uri', $_SERVER['REQUEST_URI'], PDO::PARAM_STR);
-		$sth->bindValue(':ip', $_SERVER['REMOTE_ADDR'], PDO::PARAM_STR);
-		$params = array(
-			'get' => $_GET,
-			'post' => $_POST,
-			'cookie' => $_COOKIE,
-			'server' => $_SERVER,
-			'env' => $_ENV,
-		);
-		foreach( array('password','password2','password_again','pwd','pwd2','passwd','passwrd2') as $pwd ) {
-			$params['post'][$pwd] = '[masked-password]';
-		}
-		$sth->bindValue(':params', serialize($params), PDO::PARAM_STR);
-		$sth->execute();
-	}
-
-// Helpers: display
-
-	/**
-	 * Display an error with trace
-	 * @param Exception $e
-	 * @return void
-	 */
-	protected function displayHtml(Exception $e) {
-		echo "\n<!-- Display Error-->\n<br/>",
-			'<table class="xdebug-error" dir="ltr" cellspacing="0" cellpadding="1" ',
-				'border="1" style="text-align:left !important;">';
-		if ( isset($e->xdebug_message) ) {
-			echo $e->xdebug_message;
-		}
-		else {
-			$typeName = isset($e->error_type_name)
-				? $e->error_type_name
-				: ''
-			;
-			echo '<tr><th align=""left"" bgcolor="#f57900" colspan="3">',
-				'<span style="background-color: #cc0000; color: #fce94f; font-size: x-large;">( ! )</span> ',
-				$typeName
-			;
-			if ( !($e instanceof ErrorException) ) {
-				echo "Uncaught exception '",get_class($e),"' with message ";
-			}
-			echo " '",$e->getMessage(),"' in ",
-					$e->getFile(),' on line <i>',$e->getLine(),"</i></th></tr>\n";
-			
-			if ( $this->usedProfile->show_trace ) {
-				echo '<tr><th align="left" bgcolor="#e9b96e" colspan="3">Call Stack</th></tr>',
-					'<tr><th align="center" bgcolor="#eeeeec">#</th><th align="left" bgcolor="#eeeeec">Function</th>',
-						'<th align="left" bgcolor="#eeeeec">Location</th></tr>',"\n",
-					'<tr><td bgcolor="#eeeeec" align="center">1</td><td bgcolor="#eeeeec">{main}(  )</td>',
-						'<td title="',$_SERVER['SCRIPT_FILENAME'],'" bgcolor="#eeeeec">',basename($_SERVER['SCRIPT_FILENAME']),
-							"<b>:</b>0</td></tr>\n"
-				;
-				$trace = array_reverse($e->getTrace());
-				foreach( $trace as $i => $tr ) {
-					$count = $i+2;
-					$func = $this->getFunctionString($tr);
-					if ( 'ErrorHandler::errorHandler' == $func ) {
-						continue;
-					}
-					$file = isset($tr['file']) ? $tr['file'] : '';
-					$line = isset($tr['line']) ? $tr['line'] : 0;
-					
-					echo '<tr><td bgcolor="#eeeeec" align="center">',$count,'</td>',
-						'<td bgcolor="#eeeeec">',$func,'</td>',
-						'<td title="',$file,'" bgcolor="#eeeeec">',basename($file),'<b>:</b>',$line,
-						"</td></tr>\n";
-				}
-				echo '<tr><td bgcolor="#eeeeec" align="center">',($count+1),'</td>',
-					'<td bgcolor="#eeeeec">',$e->getMessage(),'</td>',
-					'<td title="',$e->getFile(),'" bgcolor="#eeeeec">',basename($e->getFile()),'<b>:</b>',$e->getLine(),
-					"</td></tr>\n";
-			}
-		}
-		echo "</table>\n<!-- /DisplayError-->\n";
-	}
-
-	/**
-	 * Display error
-	 * @param Exception $e
-	 * @return void
-	 */
-	protected function displayComment(Exception $e) {
-		echo 
-			$e->error_type_name,
-			$e->getMessage(),' in ',
-			$e->getFile(),':[',$e->getLine(),']',"\n\t"
-		;
-	}
-
-// Helpers: mail
-
-	/**
-	 * Do mail sending
-	 * @return void
-	 */
-	protected function sendMail() {
-		$messages = glob( dirname(__FILE__).'/logs/_mail/*' );
-		$msg = array();
-		foreach( $messages as $file ) {
-			$fileName = basename($file);
-			if (
-				'.' == substr($fileName, 0, 1)
-				|| 'lastmailsent' == $fileName
-			) {
-				continue;
-			}
-			$msg[] = file_get_contents($file);
-			$msg[] = "\n====================================\n";
-		}
-		if ( !empty( $msg ) ) {
-			$sendSuccess = mail(
-				$this->usedProfile->mail['to'],
-				'=?UTF-8?B?'.base64_encode($this->usedProfile->mail['subject'].date('Y-m-d H:i:s')).'?=',
-				"Theese errors triggered:\n\n".join('',$msg),
-				join("\r\n",array(
-					// additional headers
-					'MIME-Version: 1.0',
-					'Content-type: text/plain; charset=UTF-8',
-					'Content-Transfer-Encoding: 8bit',
-					'X-Priority: 1 (Higuest)',
-					'X-MSMail-Priority: High',
-					'Importance: High',
-					'From: '.$this->usedProfile->mail['from'],
-					'Reply-To: '.$this->usedProfile->mail['from'],
-					'Return-Path: '.$this->usedProfile->mail['from'],
-					'X-Mailer: PHP/'.  phpversion().' - TErHa Error Handler'
-				)),
-				join("\r\n",array(
-					// additional parameters
-				))
-			);
-			if ( $sendSuccess ) {
-				foreach( $messages as $file ) {
-					unlink($file);
-				}
-				file_put_contents(dirname(__FILE__).'/logs/_mail/lastmailsent', time());
-			}
-		}
+		$this->trigger(ErrorHandler_Handler_Abstract::EV_ONEXCEPTION,$e);
 	}
 }
 
